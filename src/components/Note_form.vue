@@ -1,23 +1,26 @@
 <script setup>
 
 import {ref} from "vue";
-defineProps({
-  createNote :Function,
-});
+import {useDataStore} from "@/stores/dataStore.js";
+
+const dataStore = useDataStore();
 
 //refs for handling reactive variables for content
 const noteContent = ref('')
-const submitForm = () => {
+
+//submitting a new note
+const submitForm = async () => {
   const newNote = {
     content:noteContent.value
   }
-  createNote(newNote)
-
-  //reset the form
-  noteContent.value = ''
+  try{
+    await dataStore.createNote(newNote);
+    //reset the form
+    noteContent.value = ''
+  }catch(error){
+    console.log(error)
+  }
 };
-
-
 </script>
 
 <template>

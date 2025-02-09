@@ -1,17 +1,15 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-export const useDataStore = defineStore('Data', () => {
-    //data will store
-    const data = ref([]);
-    const fetchingData = ref(false);
-    const error = ref(null);
+//This file acts as a datastore to store the notes for the app
+//It also contains all API communication
+
+export const useDataStore = defineStore('notesStore', () => {
+    //data array
+    const notes = ref([]);
 
     // fetch the data from the db
     async function fetchData() {
-        //set the loading bool to true as the request is sent
-        fetchingData.value = true;
-        console.log('fetching data');
         try{
             const response = await fetch('http://localhost:3000/notes', {
                 method:'GET',
@@ -21,18 +19,13 @@ export const useDataStore = defineStore('Data', () => {
                 error.value = 'An error occurred while fetching data.';
             }
             //if the request is ok set the value of data to the json
-            data.value = await response.json();
-            console.log("Fetched data:", data.value)
+            const receivedData = await response.json();
+            notes.value = receivedData;
         }catch(error){
             console.error(error)
             error.value = error;
-        }finally{
-            //set the bool back to false
-            fetchingData.value = false;
-            console.log("fetching data = false")
         }
-    }
-    //returning the data so it can be displayed on front end
+    }//Fetch data function
 
     async function deleteNote(itemID) {
         try{
@@ -43,12 +36,13 @@ export const useDataStore = defineStore('Data', () => {
             if(!response.ok){
                 error.value = 'An error occurred while deleting data.';
             }
-
+            //delete the data object with the corresponding id
+            notes.value = notes.value.filter((note) => note._id !== itemID);
         }catch(error){
             console.error(error)
             error.value = error;
         }
-    }
+    }//Delete note function
 
     async function createNote(newNote){
         try{
@@ -59,17 +53,36 @@ export const useDataStore = defineStore('Data', () => {
             });
 
             if(!response.ok){
-                error.value = 'An error occurred while creating data.';
+                console.error(response);
             }
-            const createdNote = await response.json();
-            console.log("Crated note:", createdNote)
-            data.value.push(createdNote);
-            console.log("Al notes are creation: ", data.value)
+            await response.json();
+            notes.value.push(newNote);
+            //refresh the notes so they have the correct ids
+            await fetchData();
         }catch(error){
             console.error(error)
             error.value = 'An error occurred while creating data.';
         }
-    }
+    }//Create note function
 
-    return {data, fetchingData, error, fetchData, deleteNote, createNote};
+    async function updateNote(noteID, newContent) {
+        try{
+            const update = await fetch(`http://localhost:3000/notes/${noteID}`, {
+                method:'PUT',
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({content : newContent})
+            });
+            await update.json()
+            notes.value = notes.value.map((note) =>
+                //condition : expression if true: expression if false
+                //so check the IDs if true update the note content with the passed in content
+                note._id === noteID ? { ...note, content : newContent } : note
+            );
+            console.log("Note updated successfully:", notes.value)
+        }catch(error){
+            console.error(error)
+        }
+    }//update note function
+
+    return {notes, fetchData, deleteNote, createNote, updateNote};
 });
