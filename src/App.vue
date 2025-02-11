@@ -12,11 +12,16 @@ onMounted(async () =>{
 
 <template>
   <main>
-    <h1>Welcome to notes app</h1>
+    <h1>Notes app</h1>
     <Note_form></Note_form>
     <br>
     <Previous_Notes></Previous_Notes>
   </main>
 </template>
 <style scoped>
+
+h1 {
+  color:white;
+  font-size: 3rem;
+}
 </style>
